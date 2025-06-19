@@ -64,3 +64,4 @@ $ forge --help
 $ anvil --help
 $ cast --help
 ```
+forge install OpenZeppelin/openzeppelin-contracts@4.9.5 --no-commit
