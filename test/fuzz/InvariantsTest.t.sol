@@ -9,8 +9,11 @@ import {DSCEngine} from "../../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Handler} from "./Handler.t.sol";
+
 
 contract InvariantsTest is StdInvariant, Test {
+    Handler handler;
     DeployDSC deployer;
     DSCEngine dsce;
     DecentralizedStableCoin dsc;
@@ -25,18 +28,20 @@ contract InvariantsTest is StdInvariant, Test {
         targetContract(address(dsce));
     }
 
-    function invariant_ProtocolTotalSupplyLessThanCollateralValue() public view {
-        uint256 totalSupply = dsc.totalSupply();
-        uint256 totalWethDeposited = IERC20(weth).balanceOf(address(dsce));
-        uint256 totalWbtcDeposited = IERC20(wbtc).balanceOf(address(dsce));
+  
+    function invariant_ProtocolTotalSupplyLessThanCollateralValue() external view returns (bool) {
+    uint256 totalSupply = dsc.totalSupply();
+    uint256 totalWethDeposited = IERC20(weth).balanceOf(address(dsce));
+    uint256 totalWbtcDeposited = IERC20(wbtc).balanceOf(address(dsce));
 
-        uint256 wethValue = dsce.getUsdValue(weth, totalWethDeposited);
-        uint256 wbtcValue = dsce.getUsdValue(wbtc, totalWbtcDeposited);
+    uint256 wethValue = dsce.getUsdValue(weth, totalWethDeposited);
+    uint256 wbtcValue = dsce.getUsdValue(wbtc, totalWbtcDeposited);
 
-        console.log("totalSupply: ", totalSupply);
-        console.log("wethValue: ", wethValue);
-        console.log("wbtcValue: ", wbtcValue);
+    console.log("totalSupply: ", totalSupply);
+    console.log("wethValue: ", wethValue);
+    console.log("wbtcValue: ", wbtcValue);
+    console.log("Times Mint Called: ", handler.timesMintIsCalled());
 
-        assert(wethValue + wbtcValue >= totalSupply);
-    }
+    assert(totalSupply <= wethValue + wbtcValue);
+}
 }

@@ -28,6 +28,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import {OracleLib} from "./libraries/OracleLib.sol";
 
 /*
  * @title DSCEngine
@@ -79,6 +80,11 @@ contract DSCEngine is ReentrancyGuard {
     uint256 private constant LIQUIDATION_PRECISION = 100;
     uint256 private constant MIN_HEALTH_FACTOR = 1e18;
     uint256 private constant LIQUIDATION_BONUS=10;
+
+      ////////////////
+    //   types   //
+    ////////////////
+     using OracleLib for AggregatorV3Interface;
 
     ////////////////
     //   Events   //
@@ -210,14 +216,14 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     function getUsdValue(address token, uint256 amount) public view returns (uint256) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
-        (, int256 price,,,) = priceFeed.latestRoundData();
+       AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
+        (, int256 price,,,) = priceFeed.staleCheckLatestRoundData();
 
         return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
     }
     function getTokenAmountFromUsd(address token, uint256 usdAmountInWei) public view returns (uint256) {
-    AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
-    (, int256 price,,,) = priceFeed.latestRoundData();
+   AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
+        (, int256 price,,,) = priceFeed.staleCheckLatestRoundData();
 
     return (usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION);
 }
@@ -301,9 +307,7 @@ anyone.
 
     _revertIfHealthFactorIsBroken(msg.sender);
 }
- function getCollateralTokens() external view returns (address[] memory) {
-        return s_collateralTokens;
-    }
+ 
      function getCollateralBalanceOfUser(address user, address token) external view returns (uint256) {
         return s_collateralDeposited[user][token];
     }
@@ -314,6 +318,30 @@ anyone.
     {
         return _getAccountInformation(user);
     }
+       function getLiquidationBonus() external pure returns (uint256) {
+        return LIQUIDATION_BONUS;
+    }
+
+    function getLiquidationPrecision() external pure returns (uint256) {
+        return LIQUIDATION_PRECISION;
+    }
+
+    function getMinHealthFactor() external pure returns (uint256) {
+        return MIN_HEALTH_FACTOR;
+    }
+
+    function getCollateralTokens() external view returns (address[] memory) {
+        return s_collateralTokens;
+    }
+
+    function getDsc() external view returns (address) {
+        return address(i_dsc);
+    }
+
+    function getCollateralTokenPriceFeed(address token) external view returns (address) {
+        return s_priceFeeds[token];
+    }
+
   
 
 
